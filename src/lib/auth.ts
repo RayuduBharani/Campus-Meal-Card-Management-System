@@ -1,6 +1,10 @@
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 
+import bcrypt from 'bcryptjs'
+import UserModel from '@/models/user'
+import { DataBase } from '@/DB/DB'
+
 export type UserRole = "admin" | "user" | "cashier" | "manager"
 
 export interface User {
@@ -10,45 +14,7 @@ export interface User {
   name: string
 }
 
-// Mock user database - in production, this would be a real database
-const MOCK_USERS: Record<string, { password: string; user: User }> = {
-  "admin@example.com": {
-    password: "password123",
-    user: {
-      id: "1",
-      email: "admin@example.com",
-      role: "admin",
-      name: "Admin User",
-    },
-  },
-  "user@example.com": {
-    password: "password123",
-    user: {
-      id: "2",
-      email: "user@example.com",
-      role: "user",
-      name: "Regular User",
-    },
-  },
-  "cashier@example.com": {
-    password: "password123",
-    user: {
-      id: "3",
-      email: "cashier@example.com",
-      role: "cashier",
-      name: "John Cashier",
-    },
-  },
-  "manager@example.com": {
-    password: "password123",
-    user: {
-      id: "4",
-      email: "manager@example.com",
-      role: "manager",
-      name: "Jane Manager",
-    },
-  },
-}
+
 
 export async function createSession(user: User) {
   const cookieStore = await cookies()
@@ -97,11 +63,31 @@ export async function requireRole(allowedRoles: UserRole[]): Promise<User> {
 }
 
 export async function authenticateUser(email: string, password: string): Promise<User | null> {
-  const userRecord = MOCK_USERS[email.toLowerCase()]
+  try {
+    // Connect to database
+    await DataBase()
 
-  if (!userRecord || userRecord.password !== password) {
+    // Find user by email
+    const user = await UserModel.findOne({ email: email.toLowerCase() })
+    if (!user) {
+      return null
+    }
+
+    // Verify password
+    const isValid = await bcrypt.compare(password, user.password)
+    if (!isValid) {
+      return null
+    }
+
+    // Return user without password
+    return {
+      id: user._id.toString(),
+      email: user.email,
+      name: user.name,
+      role: user.role as UserRole,
+    }
+  } catch (error) {
+    console.error('Authentication error:', error)
     return null
   }
-
-  return userRecord.user
 }
