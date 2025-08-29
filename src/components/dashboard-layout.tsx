@@ -55,7 +55,6 @@ export function DashboardLayout({ user, children }: DashboardLayoutProps) {
     }
 
     if (role === "admin" || role === "manager") {
-      links.push({ href: "/settings", label: "Settings" })
     }
 
     return links
