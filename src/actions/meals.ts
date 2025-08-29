@@ -82,7 +82,7 @@ export async function getCartMeals(userId: string) {
             isActive: true 
         }).populate({
             path: 'items.mealId',
-            model: 'Meal'  // Changed from 'meals' to 'Meal' to match the model name
+            model: MealsModel,  // Using the actual model reference instead of string
         }).lean();
 
         if (!cart) {
@@ -155,29 +155,31 @@ export async function RemoveCardItem(cartItemId: string, userId: string) {
         throw new Error(error instanceof Error ? error.message : "Failed to remove item from cart");
     }
 }
-
 export async function PlaceOrder({ userId }: { userId: string }) {
     try {
         await dbConnect();
 
-        // Find user's active cart
-        const cart = await CartModel.findOne({ 
+        // Find the user's active cart
+        const cart = await CartModel.findOne({
             userId: userId,
-            isActive: true 
-        }).populate('items.mealId');
+            isActive: true
+        }).populate({
+            path: 'items.mealId',
+            model: MealsModel
+        });
 
         if (!cart || !cart.items.length) {
-            throw new Error("No active cart found or cart is empty");
+            throw new Error("Cart is empty");
         }
 
-        // Calculate total amount and prepare order items
+        // Calculate total amount and prepare order items with prices
         const orderItems = cart.items.map((item: { mealId: { _id: string; price: number; }; quantity: number; }) => ({
             mealId: item.mealId._id,
             quantity: item.quantity,
-            price: item.mealId.price * item.quantity
+            price: item.mealId.price * item.quantity // Store the price at time of order
         }));
 
-        const totalAmount = orderItems.reduce((sum : number, item : { price: number }) => sum + item.price, 0);
+        const totalAmount = orderItems.reduce((sum: number, item: { price: number; }) => sum + item.price, 0);
 
         // Check user's wallet balance
         const user = await UserModel.findById(userId);
@@ -186,7 +188,7 @@ export async function PlaceOrder({ userId }: { userId: string }) {
         }
 
         if (user.money < totalAmount) {
-            throw new Error("Insufficient balance in wallet");
+            throw new Error("Insufficient balance");
         }
 
         // Create order
@@ -197,13 +199,17 @@ export async function PlaceOrder({ userId }: { userId: string }) {
             status: 'completed'
         });
 
-        // Update user's wallet balance
-        user.money -= totalAmount;
-        await user.save();
+        // Update user's balance atomically
+        await UserModel.findByIdAndUpdate(
+            userId,
+            { $inc: { money: -totalAmount } }
+        );
 
         // Deactivate the cart
-        cart.isActive = false;
-        await cart.save();
+        await CartModel.findByIdAndUpdate(
+            cart._id,
+            { isActive: false }
+        );
 
         return { 
             success: true, 
@@ -211,6 +217,7 @@ export async function PlaceOrder({ userId }: { userId: string }) {
             orderId: order._id,
             totalAmount: totalAmount
         };
+
     } catch (error) {
         console.error("Error placing order:", error);
         throw new Error(error instanceof Error ? error.message : "Failed to place order");
