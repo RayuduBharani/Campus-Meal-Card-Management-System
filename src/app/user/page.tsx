@@ -3,6 +3,7 @@ import { DashboardLayout } from "@/components/dashboard-layout"
 
 export default async function UserDashboard() {
   const user = await requireRole(["user", "manager", "admin"])
+  // console.log(user)
 
   return (
     <DashboardLayout user={user}>

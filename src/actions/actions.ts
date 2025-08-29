@@ -1,5 +1,9 @@
 "use server"
 
+
+import bcrypt from 'bcryptjs'
+import UserModel from '@/models/user'
+import { DataBase } from '@/DB/DB'
 import { redirect } from "next/navigation"
 import { authenticateUser, createSession, destroySession } from "../lib/auth"
 import type { UserRole } from "../lib/auth"
@@ -27,10 +31,6 @@ export async function loginByRoleAction(role: UserRole) {
     return { error: "Login failed. Please try again." }
   }
 }
-
-import bcrypt from 'bcryptjs'
-import UserModel from '@/models/user'
-import { DataBase } from '@/DB/DB'
 
 export async function registerAction(formData: FormData) {
   'use server'
@@ -62,7 +62,8 @@ export async function registerAction(formData: FormData) {
       email: email.toLowerCase(),
       password: hashedPassword,
       name,
-      role
+      role,
+      money: 0
     })
     
     // Create session with user data
@@ -70,7 +71,8 @@ export async function registerAction(formData: FormData) {
       id: newUser._id.toString(),
       email: newUser.email,
       name: newUser.name,
-      role: newUser.role as UserRole
+      role: newUser.role as UserRole,
+      money: newUser.money
     }
     
     await createSession(user)

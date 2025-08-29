@@ -8,6 +8,10 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: "student",
         required: true
+    },
+    money : {
+        type: Number,
+        default: 0
     }
 }, {
     timestamps: true

@@ -8,6 +8,7 @@ import { DataBase } from '@/DB/DB'
 export type UserRole = "admin" | "user" | "cashier" | "manager"
 
 export interface User {
+  money: number
   id: string
   email: string
   role: UserRole
@@ -85,6 +86,7 @@ export async function authenticateUser(email: string, password: string): Promise
       email: user.email,
       name: user.name,
       role: user.role as UserRole,
+      money: user.money
     }
   } catch (error) {
     console.error('Authentication error:', error)

@@ -64,3 +64,14 @@ export const meals = [
     image: "https://images.unsplash.com/photo-1610192244261-3f33de3f55e4?auto=format&fit=crop&q=80&w=800&h=600"
   }
 ]
+
+export const getCategoryColor = (category: string) => {
+  const colors = {
+    "Main Course": "bg-primary/10 text-primary hover:bg-primary/20",
+    "Breakfast": "bg-orange-500/10 text-orange-500 hover:bg-orange-500/20",
+    "Beverages": "bg-blue-500/10 text-blue-500 hover:bg-blue-500/20",
+    "Desserts": "bg-pink-500/10 text-pink-500 hover:bg-pink-500/20",
+    "Bread": "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20"
+  }
+  return colors[category as keyof typeof colors] || "bg-secondary/10 text-secondary hover:bg-secondary/20"
+}
