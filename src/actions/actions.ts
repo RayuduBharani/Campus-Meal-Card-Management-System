@@ -12,10 +12,10 @@ export async function loginByRoleAction(role: UserRole) {
   'use server'
   
   const mockUsers = {
-    admin: { id: "1", email: "admin@example.com", role: "admin" as UserRole, name: "Admin User" },
-    user: { id: "2", email: "user@example.com", role: "user" as UserRole, name: "Regular User" },
-    cashier: { id: "3", email: "cashier@example.com", role: "cashier" as UserRole, name: "John Cashier" },
-    manager: { id: "4", email: "manager@example.com", role: "manager" as UserRole, name: "Jane Manager" },
+    admin: { id: "1", email: "admin@example.com", role: "admin" as UserRole, name: "Admin User", money: 0 },
+    user: { id: "2", email: "user@example.com", role: "user" as UserRole, name: "Regular User", money: 0 },
+    cashier: { id: "3", email: "cashier@example.com", role: "cashier" as UserRole, name: "John Cashier", money: 0 },
+    manager: { id: "4", email: "manager@example.com", role: "manager" as UserRole, name: "Jane Manager", money: 0 },
   }
 
   const user = mockUsers[role]

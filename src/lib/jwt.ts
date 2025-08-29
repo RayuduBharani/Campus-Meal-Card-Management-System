@@ -13,7 +13,7 @@ export function createToken(payload: Partial<User>) {
 export function verifyToken(token: string): Partial<User> {
     try {
         return jwt.verify(token, JWT_SECRET) as Partial<User>
-    } catch (error) {
+    } catch {
         throw new Error('Invalid token')
     }
 }
