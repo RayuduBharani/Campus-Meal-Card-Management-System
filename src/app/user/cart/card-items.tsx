@@ -21,9 +21,10 @@ interface CartItem {
 interface CardItemsPageProps {
   items: CartItem[]
   userId: string
+  userBalance: number
 }
 
-export default function CardItemsPage({ items = [], userId }: CardItemsPageProps) {
+export default function CardItemsPage({ items = [], userId, userBalance }: CardItemsPageProps) {
   const [cartItems, setCartItems] = React.useState(items)
   const totalAmount = cartItems.reduce((total, item) => total + (item.mealId.price * item.quantity), 0)
 
