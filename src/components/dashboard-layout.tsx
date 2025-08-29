@@ -44,6 +44,12 @@ export function DashboardLayout({ user, children }: DashboardLayoutProps) {
       )
     }
 
+    if (role === "cashier") {
+      links.push(
+        { href: "/cashier/orders", label: "Orders" }
+      )
+    }
+
     if (role === "manager" || role === "admin" || role === "supervisor") {
       links.push({ href: "/reports", label: "Reports" })
     }

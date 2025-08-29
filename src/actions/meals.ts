@@ -51,7 +51,7 @@ export async function addMealToCart(mealId: string, quantity: number , userId : 
 // getting all the meals in the meals collection 
 export async function getMeals() {
     await dbConnect()
-    const meals = await CartModel.find()
+    const meals = await MealsModel.find().sort({ category: 1 })
     return JSON.parse(JSON.stringify(meals));
 }
 
@@ -181,29 +181,14 @@ export async function PlaceOrder({ userId }: { userId: string }) {
 
         const totalAmount = orderItems.reduce((sum: number, item: { price: number; }) => sum + item.price, 0);
 
-        // Check user's wallet balance
-        const user = await UserModel.findById(userId);
-        if (!user) {
-            throw new Error("User not found");
-        }
-
-        if (user.money < totalAmount) {
-            throw new Error("Insufficient balance");
-        }
-
-        // Create order
+        // Create order in pending status
         const order = await OrderModel.create({
             userId: userId,
             items: orderItems,
             totalAmount: totalAmount,
-            status: 'completed'
+            status: 'pending',
+            paymentStatus: 'pending'
         });
-
-        // Update user's balance atomically
-        await UserModel.findByIdAndUpdate(
-            userId,
-            { $inc: { money: -totalAmount } }
-        );
 
         // Deactivate the cart
         await CartModel.findByIdAndUpdate(
@@ -213,7 +198,7 @@ export async function PlaceOrder({ userId }: { userId: string }) {
 
         return { 
             success: true, 
-            message: "Order placed successfully",
+            message: "Order placed successfully! Please proceed to the cashier for payment. Your balance will be deducted after payment confirmation.",
             orderId: order._id,
             totalAmount: totalAmount
         };

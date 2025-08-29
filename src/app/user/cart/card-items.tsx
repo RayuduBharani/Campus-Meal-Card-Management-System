@@ -21,10 +21,9 @@ interface CartItem {
 interface CardItemsPageProps {
   items: CartItem[]
   userId: string
-  userBalance: number
 }
 
-export default function CardItemsPage({ items = [], userId, userBalance }: CardItemsPageProps) {
+export default function CardItemsPage({ items = [], userId }: CardItemsPageProps) {
   const [cartItems, setCartItems] = React.useState(items)
   const totalAmount = cartItems.reduce((total, item) => total + (item.mealId.price * item.quantity), 0)
 
@@ -45,18 +44,17 @@ export default function CardItemsPage({ items = [], userId, userBalance }: CardI
   }
 
   const handlePlaceOrder = async () => {
-    if (totalAmount > userBalance) {
-      toast.error('Insufficient balance')
-      return
-    }
-
     try {
       const result = await PlaceOrder({ userId });
       
       if (result.success) {
         setCartItems([]);
         toast.success(result.message);
-        // Reload the page to update the user's balance
+        toast('Please visit the cashier to complete your payment', {
+          description: `Total amount: ₹${totalAmount}`,
+          duration: 5000
+        });
+        // Reload the page to refresh the cart state
         window.location.reload();
       } else {
         throw new Error('Failed to place order');
@@ -107,7 +105,7 @@ export default function CardItemsPage({ items = [], userId, userBalance }: CardI
         <Button 
           onClick={handlePlaceOrder}
           className="w-full"
-          disabled={totalAmount > userBalance}
+          disabled={totalAmount === 0}
         >
           Place Order
         </Button>

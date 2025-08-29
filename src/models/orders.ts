@@ -33,6 +33,18 @@ const orderSchema = new mongoose.Schema({
         enum: ['pending', 'completed', 'cancelled'],
         default: 'pending'
     },
+    paymentStatus: {
+        type: String,
+        enum: ['pending', 'completed'],
+        default: 'pending'
+    },
+    cashierId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "users"
+    },
+    paymentDate: {
+        type: Date
+    },
     orderDate: { 
         type: Date, 
         default: Date.now 
