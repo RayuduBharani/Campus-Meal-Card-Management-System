@@ -50,11 +50,12 @@ export function DashboardLayout({ user, children }: DashboardLayoutProps) {
       )
     }
 
-    if (role === "manager" || role === "admin" || role === "supervisor") {
-      links.push({ href: "/reports", label: "Reports" })
-    }
-
-    if (role === "admin" || role === "manager") {
+    if (role === "manager" || role === "admin") {
+      links.push(
+        { href: `/${role}/meals`, label: "Meals" },
+        { href: `/${role}/orders`, label: "Orders" },
+        { href: `/${role}/users`, label: "Users" }
+      )
     }
 
     return links

@@ -1,241 +1,259 @@
-# 🥗 Campus Meal Card Management System (CMCM)
+# 🥗 Campus Meal Card Management System
 
-A comprehensive meal card management system for university canteens, enabling cashless transactions for students and efficient management for staff.
+A modern, cashless meal management system for university canteens built with Next.js 13+, TypeScript, and MongoDB.
 
-## Author
-- Name: Rayudu Bharani
-- Email: rayudubharani7288@gmail.com
+## 🎯 Project Overview
 
-## Project Overview
-The Campus Meal Card Management System (CMCM) is a modern, full-stack solution designed to digitize university canteen transactions. The system supports multiple user roles and provides tailored interfaces for administrators, staff members, and students.
+This system digitalizes university canteen transactions by implementing a meal card system where students can recharge their cards and make cashless payments for meals. The system supports multiple user roles and provides tailored dashboards for each role.
 
-## Core Features
+### Key Features
 
-### Role-Based Access
-- 👨‍💼 **Admin Dashboard**: System-wide oversight and analytics
-- 🏪 **Manager Interface**: Recharge approval and student activity monitoring
-- 💳 **Cashier Portal**: Efficient transaction processing
-- 👨‍� **Student Mobile Interface**: Balance management and transaction history
+- 🔐 Role-based access control (Admin, Manager, Cashier, Student)
+- 💳 Digital meal card management with MongoDB integration
+- 💰 Real-time balance updates and recharge system
+- 🍽️ Comprehensive meal management system
+- 📊 Role-specific dashboards with real-time updates
+- 🔄 Detailed transaction and order tracking
+- 🍴 Menu management with categories
+- 💼 Cashier order processing system
 
-### Key Functionalities
-- 💰 Secure card balance management
-- 🔄 Recharge request and approval system
-- 📊 Comprehensive transaction tracking
-- 📱 Mobile-responsive student interface
-- 🔒 Role-based authentication
-- 📈 Real-time analytics and reporting
+## 📝 Design Answers
 
-## Database Schema Design
+### 1. Data Modeling
 
-### User Collections
+#### MongoDB Schema Design
+
+**User Schema (`users` collection):**
 ```javascript
-User {
-  id: UUID,
-  role: enum['ADMIN', 'MANAGER', 'CASHIER', 'STUDENT'],
-  email: string,
-  password: string,
-  name: string,
-  studentId?: string,  // for students only
-  department?: string, // for students only
-  staffId?: string,    // for staff only
-  createdAt: timestamp,
-  updatedAt: timestamp
+{
+    name: String,          // Required: User's full name
+    email: String,         // Required: Unique email identifier
+    password: String,      // Required: Hashed password
+    role: String,          // Required: "student"|"admin"|"manager"|"cashier"
+    money: Number,         // Default: 0, Current balance
+    timestamps: true       // Tracks createdAt and updatedAt
 }
 ```
 
-### Card Collection
+**Meals Schema (`meals` collection):**
 ```javascript
-Card {
-  id: UUID,
-  userId: UUID,
-  balance: decimal,
-  status: enum['ACTIVE', 'BLOCKED', 'EXPIRED'],
-  lastUsed: timestamp,
-  createdAt: timestamp,
-  updatedAt: timestamp
+{
+    name: String,          // Required: Name of the meal
+    description: String,   // Required: Meal description
+    price: Number,         // Required: Price > 0
+    category: String,      // Required: Meal category
+    image: String,         // Required: Image URL
+    timestamps: true       // Tracks createdAt and updatedAt
 }
 ```
 
-### Transaction Collection
+**Orders Schema (`orders` collection):**
 ```javascript
-Transaction {
-  id: UUID,
-  cardId: UUID,
-  userId: UUID,
-  type: enum['RECHARGE', 'PURCHASE'],
-  amount: decimal,
-  status: enum['PENDING', 'APPROVED', 'REJECTED', 'COMPLETED'],
-  approvedBy?: UUID,  // for recharge transactions
-  mealDetails?: {     // for purchase transactions
-    items: array,
-    quantity: number,
-    price: decimal
-  },
-  createdAt: timestamp,
-  updatedAt: timestamp
+{
+    userId: ObjectId,      // Reference to users collection
+    items: [{
+        mealId: ObjectId, // Reference to meals collection
+        quantity: Number, // Minimum: 1
+        price: Number    // Price at time of order
+    }],
+    totalAmount: Number,   // Total order amount
+    status: String,        // 'pending'|'completed'|'cancelled'
+    paymentStatus: String, // 'pending'|'completed'
+    cashierId: ObjectId,   // Reference to cashier who processed
+    paymentDate: Date,     // When payment was processed
+    orderDate: Date,       // When order was created
 }
 ```
 
-## Tech Stack
+#### Transaction Recording
 
-- [Next.js 14](https://nextjs.org/) - React framework
-- [shadcn/ui](https://ui.shadcn.com/) - UI component library
-- [Tailwind CSS](https://tailwindcss.com/) - CSS framework
-- [next-themes](https://github.com/pacocoursey/next-themes) - Theme management
+**Recharge Transactions (`ManagerMoneyAccept` collection):**
+```javascript
+{
+    studentId: ObjectId,    // Reference to users collection
+    accept: Boolean,        // Approval status
+    money: Number,         // Recharge amount
+    createdAt: Date,       // Transaction timestamp
+    timestamps: true       // Tracks updates
+}
+```
 
-## Setup Instructions
+**Cart Transactions (`Cart` collection):**
+```javascript
+{
+    userId: ObjectId,      // Reference to users collection
+    items: [{
+        mealId: ObjectId, // Reference to meals collection
+        quantity: Number  // Minimum: 1
+    }],
+    isActive: Boolean     // Cart status
+}
+```
+
+**Order Transactions (`Order` collection):**
+```javascript
+{
+    userId: ObjectId,      // Student who ordered
+    items: [{
+        mealId: ObjectId, // Meal reference
+        quantity: Number, // Quantity ordered
+        price: Number    // Price at time of order
+    }],
+    totalAmount: Number,   // Total cost
+    status: String,        // Order status
+    paymentStatus: String, // Payment status
+    cashierId: ObjectId,   // Cashier who processed
+    paymentDate: Date     // When paid
+}
+```
+
+### 2. Edge Cases & Business Rules
+
+#### Insufficient Balance Handling
+- Real-time balance verification in user model
+- Order creation blocked if balance insufficient
+- Clear error messages displayed to students
+- Direct redirection to recharge page
+- Balance updates atomic with mongoose transactions
+
+#### Preventing Double Transactions
+- MongoDB atomic operations for balance updates
+- Mongoose timestamps for tracking changes
+- isActive flag in cart to prevent duplicates
+- Status tracking in order model
+- Frontend state management with React Context
+
+#### Recharge Approval Process
+Our system implements manager approval for recharges because:
+- Dedicated manager approval model
+- Direct student-manager linking
+- Simple accept/reject workflow
+- Automatic balance updates on approval
+- Clear audit trail through timestamps
+
+### 3. Dashboard Design
+
+#### Admin Dashboard
+Shows:
+- Low Balance Alerts Counter
+- Pending Orders Status
+- Today's Orders Statistics (Completed/Total)
+- System Operational Status
+- Recent Transaction List with Details
+  - User Information
+  - Transaction Amount
+  - Transaction Time
+
+*Why?* Focuses on real-time monitoring and system health.
+
+#### Manager Dashboard
+Shows:
+- Money Recharge Requests
+- Request Amount Details
+- Student Information
+- Approval Actions
+- Transaction History
+
+*Why?* Streamlines the recharge approval process.
+
+#### Cashier Dashboard
+Shows:
+- Pending Orders Queue
+- Order Details with Items
+- Payment Processing
+- Order Status Updates
+- Quick Actions
+
+*Why?* Facilitates efficient order processing.
+
+#### Student Dashboard
+Shows:
+- Current Balance
+- Cart Management
+- Available Meals
+- Order History
+- Recharge Request Options
+
+*Why?* Essential features for daily meal purchases.
+
+## 🛠️ Technical Stack
+
+- **Frontend:** Next.js 13+, TypeScript, TailwindCSS
+- **Backend:** Next.js API Routes with App Router
+- **Database:** MongoDB
+- **Authentication:** JWT with Next.js Middleware
+- **UI Components:** Shadcn UI
+- **Image Storage:** URL-based image references
+- **API Integration:** RESTful API endpoints
+
+## 🚀 Getting Started
 
 ### Prerequisites
+
 - Node.js 18+
-- MongoDB or PostgreSQL
-- npm or yarn
+- MongoDB 6.0+
+- npm/yarn
 
 ### Installation
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/rayudubandaru/campus-meal-card-management.git
-cd campus-meal-card-management
+git clone https://github.com/RayuduBharani/Campus-Meal-Card-Management-System.git
 ```
 
 2. Install dependencies:
-
 ```bash
+cd Campus-Meal-Card-Management-System
 npm install
 ```
 
-3. Start the development server:
+3. Set up environment variables:
+Create a .env file with:
+```env
+MONGODB_URI="your-mongodb-connection-string"
+JWT_SECRET="your-jwt-secret"
+NEXT_PUBLIC_API_URL="http://localhost:3000"
+```
 
-```bash
+4. Ensure MongoDB is running:
+Make sure you have MongoDB installed and running locally, or use MongoDB Atlas connection string in your .env file.
+
+5. Start the development server:
+\`\`\`bash
 npm run dev
-```
+\`\`\`
 
-4. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🎥 Demo
 
-## Project Structure
+[Link to demo video will be added]
 
-```
-src/
-├── app/              # Next.js pages
-│   ├── admin/        # Admin dashboard
-│   ├── manager/      # Manager interface
-│   ├── cashier/      # Cashier portal
-│   ├── student/      # Student mobile interface
-│   ├── api/          # API routes
-│   └── auth/         # Authentication
-├── components/       # Reusable components
-│   ├── ui/          # shadcn components
-│   ├── dashboard/   # Dashboard components
-│   └── forms/       # Form components
-├── lib/             # Utilities
-│   ├── db/         # Database utilities
-│   ├── auth/       # Auth utilities
-│   └── api/        # API utilities
-└── types/          # TypeScript types
-```
+## 📝 Assumptions Made
 
-## Design Decisions & Business Rules
+1. **Internet Connectivity:** Assumes stable internet connection for real-time transactions.
+2. **Single Institution:** System is designed for a single university/institution.
+3. **Operating Hours:** System operates 24/7 with maintenance windows.
+4. **User Access:** All users have access to smart devices/computers.
+5. **Data Privacy:** Complies with basic data protection regulations.
 
-### 1. Data Modeling Decisions
+## 🎁 Implemented Features
 
-#### User Information Storage
-- **Students**: ID, name, email, department, year, card details
-- **Staff**: ID, name, email, role, department, permissions
-- **Admin**: ID, name, email, role, access level
+- ✅ Complete meal management system
+- ✅ Real-time balance tracking
+- ✅ Role-based access control
+- ✅ Order processing system
+- ✅ Transaction history
+- ✅ User authentication and authorization
 
-#### Card-Student Linking
-- One-to-one relationship between students and cards
-- Cards store balance, status, and transaction history
-- Unique identifiers prevent duplicate cards
+## 📜 License
 
-#### Transaction Recording
-- Separate collections for recharges and purchases
-- Timestamps and approval status for auditing
-- Detailed meal information for purchases
+MIT
 
-### 2. Edge Cases & Solutions
+## 👥 Contributors
 
-#### Insufficient Balance
-- Real-time balance checks before transaction approval
-- Grace period option for small negative balances
-- Automatic transaction rejection if below threshold
+- Bharani Rayudu
 
-#### Duplicate Transactions
-- Unique transaction IDs
-- Timestamp-based locking mechanism
-- Transaction status tracking
+## 📫 Contact
 
-#### Recharge Approval Process
-- Manual approval by managers for amounts above threshold
-- Automatic approval for smaller amounts
-- Email notifications for pending approvals
-
-### 3. Dashboard Design Rationale
-
-#### Admin View
-- Total active users and cards
-- Daily/weekly transaction volumes
-- Popular meal times and items
-- System health metrics
-
-#### Manager View
-- Pending recharge requests
-- Daily transaction summary
-- Student activity patterns
-- Balance distribution
-
-#### Cashier View
-- Quick balance check
-- Fast transaction entry
-- Recent transaction history
-- Peak hour alerts
-
-## Bonus Features Implemented
-
-1. 🍽️ **Interactive Meal Menu**
-   - Categorized menu items
-   - Real-time price updates
-   - Popular items highlighting
-
-2. 📊 **Advanced Analytics**
-   - Weekly consumption patterns
-   - Popular meal reports
-   - Peak hour analysis
-
-3. 📱 **QR Code Integration**
-   - Unique QR codes per student
-   - Quick scan-and-pay
-   - Transaction verification
-
-4. 🧪 **API Testing**
-   - Jest for unit testing
-   - Supertest for API testing
-   - Mock data generation
-
-5. 🐳 **Docker Support**
-   - Containerized backend
-   - MongoDB container
-   - Docker Compose setup
-
-## Theme Support
-
-This project includes built-in support for light and dark modes using `next-themes`. The theme automatically syncs with system preferences and can be toggled manually.
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Acknowledgments
-
-- [Next.js](https://nextjs.org/)
-- [shadcn/ui](https://ui.shadcn.com/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [next-themes](https://github.com/pacocoursey/next-themes)
+- Email: rayudubharani7288@gmail.com
+- LinkedIn: [Bharani Rayudu](https://www.linkedin.com/in/rayudu-bharani/)
+- GitHub: [RayuduBharani](https://github.com/RayuduBharani)

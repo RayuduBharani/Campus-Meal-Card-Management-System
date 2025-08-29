@@ -21,7 +21,7 @@ export interface User {
     name: string;
     email: string;
     money: number;
-    role: 'admin' | 'user' | 'cashier' | 'manager';
+    role: 'admin' | 'user' | 'cashier' | 'manager' | 'student';
 }
 
 export interface Order {
@@ -34,4 +34,20 @@ export interface Order {
     cashierId?: User;
     paymentDate?: Date;
     orderDate: Date;
+}
+
+
+export interface AdminDashboardStats {
+    studentStats: {
+        lowBalanceCount: number;
+        totalStudents: number;
+        totalBalance: number;
+    };
+    todayStats: {
+        totalOrders: number;
+        completedOrders: number;
+        pendingOrders: number;
+        totalAmount: number;
+    };
+    recentTransactions: Order[];
 }
